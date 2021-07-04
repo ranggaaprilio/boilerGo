@@ -1,19 +1,26 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/ranggaaprilio/boilerGo/exception"
 	"github.com/spf13/viper"
 )
 
 // Configurations exported
 type Configurations struct {
-	Server ServerConfigurations
+	Server   ServerConfigurations
+	Database DbConfigurations
 }
 type ServerConfigurations struct {
 	Name string
 	Port string
+}
+
+type DbConfigurations struct {
+	DbUsername string
+	DbPassword string
+	DbHost     string
+	DbPort     string
+	DbName     string
 }
 
 func Loadconf() Configurations {
@@ -33,7 +40,7 @@ func Loadconf() Configurations {
 
 	err := viper.Unmarshal(&configuration)
 	if err != nil {
-		fmt.Printf("Unable to decode into struct, %v", err)
+		exception.PanicIfNeeded(err)
 	}
 
 	return configuration

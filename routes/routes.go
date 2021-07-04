@@ -8,7 +8,6 @@ import (
 	// "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	ver1 "github.com/ranggaaprilio/boilerGo/controller/v1"
 	"github.com/ranggaaprilio/boilerGo/exception"
 )
 
@@ -28,21 +27,29 @@ func Init() *echo.Echo {
 	e.Use(ServerHeader)
 
 	/** middeleware **/
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "method=${method}, uri=${uri}, status=${status} ,time=${time_rfc3339}\n",
+	}))
 	e.Use(middleware.Recover())
+	/** middeleware **/
 
+	//routing
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "GO Version 1.16 ")
 	})
 
+	/**v1 Group**/
 	v1 := e.Group("/api/v1")
-	v1.GET("/", ver1.Welcome)
+	WelcomeRouter(v1)
+	UserRouter(v1)
+	/**v1 Group**/
 
+	//Mapping To Json file
 	data, err := json.MarshalIndent(e.Routes(), "", "  ")
 	if err != nil {
 		exception.PanicIfNeeded(err)
 	}
-	ioutil.WriteFile("routes.json", data, 0644)
+	ioutil.WriteFile("routes/routes.json", data, 0644)
 
 	return e
 }
