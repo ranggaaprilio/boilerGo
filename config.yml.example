@@ -1,4 +1,9 @@
 server:
   port: "8080"
   name: "GOBOILER"
-
+database:
+  dbusername: "rangga"
+  dbpassword: "password"
+  dbhost: "127.0.0.1"
+  dbport: "3306"
+  dbname: "example"

@@ -6,8 +6,12 @@ import (
 	"net/http"
 
 	// "github.com/dgrijalva/jwt-go"
+	validator "github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/ranggaaprilio/boilerGo/app/v1/handler"
+	"github.com/ranggaaprilio/boilerGo/app/v1/modules/user"
+	"github.com/ranggaaprilio/boilerGo/config"
 	"github.com/ranggaaprilio/boilerGo/exception"
 )
 
@@ -20,13 +24,28 @@ func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
 
 }
 
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+		// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
+}
+
 //Init Routing Initialize
 func Init() *echo.Echo {
+	db := config.CreateCon()
+
 	e := echo.New()
 	/** custom Header **/
 	e.Use(ServerHeader)
 
 	/** middeleware **/
+	e.Validator = &CustomValidator{validator: validator.New()}
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status} ,time=${time_rfc3339}\n",
 	}))
@@ -38,11 +57,21 @@ func Init() *echo.Echo {
 		return c.String(http.StatusOK, "GO Version 1.16 ")
 	})
 
-	/**v1 Group**/
+	/**v1 Group==============================================================**/
 	v1 := e.Group("/api/v1")
+
+	//**Welcome v1 api**//
 	WelcomeRouter(v1)
-	UserRouter(v1)
-	/**v1 Group**/
+	//**end Welcome v1 api**//
+
+	//**User v1 api**//
+	userRepository := user.NewRepository(db)
+	userService := user.NewService(userRepository)
+	userHandler := handler.NewUserHandler(userService)
+	UserRouter(v1, userHandler)
+	//**User v1 api**//
+
+	/**end v1 Group============================================================**/
 
 	//Mapping To Json file
 	data, err := json.MarshalIndent(e.Routes(), "", "  ")

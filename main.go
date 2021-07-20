@@ -8,8 +8,10 @@ import (
 
 func main() {
 	defer exception.Catch()
+
 	conf := c.Loadconf()
 	c.DbInit()
+	bootstrap()
 	e := routes.Init()
 
 	e.Logger.Fatal(e.Start(":" + conf.Server.Port))
