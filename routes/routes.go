@@ -13,6 +13,7 @@ import (
 	"github.com/ranggaaprilio/boilerGo/app/v1/modules/user"
 	"github.com/ranggaaprilio/boilerGo/config"
 	"github.com/ranggaaprilio/boilerGo/exception"
+	customMiddleware "github.com/ranggaaprilio/boilerGo/middleware"
 )
 
 //ServerHeader Config
@@ -41,20 +42,44 @@ func Init() *echo.Echo {
 	db := config.CreateCon()
 
 	e := echo.New()
-	/** custom Header **/
+	/** custom Middleware **/
 	e.Use(ServerHeader)
+	s := customMiddleware.NewStats()
+	e.Use(s.Process)
 
 	/** middeleware **/
+	e.Use(middleware.GzipWithConfig(middleware.GzipConfig{
+		Level: 5,
+	}))
+	//make Uniq ID for Every single request
+	e.Use(middleware.RequestID())
+
+	//Make custom validator
 	e.Validator = &CustomValidator{validator: validator.New()}
+
+	//Loging
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "method=${method}, uri=${uri}, status=${status} ,time=${time_rfc3339}\n",
 	}))
+
+	//Recover
 	e.Use(middleware.Recover())
+
+	//CORS HANDLER
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		AllowMethods: []string{http.MethodGet, http.MethodHead, http.MethodPut, http.MethodPatch, http.MethodPost, http.MethodDelete, http.MethodOptions},
+	}))
+
+	//static file
+	e.Static("/", "public")
 	/** middeleware **/
 
 	//routing
+	e.GET("/healthcheck", s.Handle)
 	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "GO Version 1.16 ")
+		return c.String(http.StatusOK, "GO Version 1.17 ")
 	})
 
 	/**v1 Group==============================================================**/
