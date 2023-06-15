@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 
 	// "github.com/dgrijalva/jwt-go"
 	validator "github.com/go-playground/validator/v10"
@@ -16,7 +17,7 @@ import (
 	customMiddleware "github.com/ranggaaprilio/boilerGo/middleware"
 )
 
-//ServerHeader Config
+// ServerHeader Config
 func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderServer, "Aprilio/1.0")
@@ -37,7 +38,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return nil
 }
 
-//Init Routing Initialize
+// Init Routing Initialize
 func Init() *echo.Echo {
 	db := config.CreateCon()
 
@@ -79,7 +80,9 @@ func Init() *echo.Echo {
 	//routing
 	e.GET("/healthcheck", s.Handle)
 	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "GO Version 1.17 ")
+		//get go version
+		versionSTATUS := "The application was built with the Go version: " + runtime.Version() + "\n"
+		return c.String(http.StatusOK, versionSTATUS)
 	})
 
 	/**v1 Group==============================================================**/

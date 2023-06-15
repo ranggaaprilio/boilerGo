@@ -11,7 +11,7 @@ func main() {
 
 	conf := c.Loadconf()
 	c.DbInit()
-	bootstrap()
+	// bootstrap()
 	e := routes.Init()
 
 	e.Logger.Fatal(e.Start(":" + conf.Server.Port))
