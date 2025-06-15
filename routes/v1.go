@@ -14,6 +14,7 @@ func WelcomeRouter(v1 *echo.Group) {
 }
 
 func UserRouter(v1 *echo.Group, userHandler *handler.UserHandler) {
-
-	v1.POST("/adduser", userHandler.RegisterUser)
+	// User routes
+	v1.POST("/users", userHandler.RegisterUser)
+	v1.GET("/users/:id", userHandler.GetUser)
 }

@@ -1,0 +1,162 @@
+basePath: /api
+definitions:
+  handler.UserResponse:
+    properties:
+      CreatedAt:
+        example: "2025-06-15T19:22:47.091+07:00"
+        type: string
+      DeletedAt:
+        example: "2025-06-15T19:22:47.091+07:00"
+        type: string
+      ID:
+        example: 1
+        type: integer
+      UpdatedAt:
+        example: "2025-06-15T19:22:47.091+07:00"
+        type: string
+      name:
+        example: John Doe
+        type: string
+    type: object
+  helper.BadRequestResponse:
+    properties:
+      code:
+        example: 400
+        type: integer
+      data:
+        type: string
+      message:
+        example: Bad Request
+        type: string
+    type: object
+  helper.InternalServerErrorResponse:
+    properties:
+      code:
+        example: 500
+        type: integer
+      data:
+        type: string
+      message:
+        example: Internal Server Error
+        type: string
+    type: object
+  helper.NotFoundResponse:
+    properties:
+      code:
+        example: 404
+        type: integer
+      data:
+        type: string
+      message:
+        example: Not Found
+        type: string
+    type: object
+  helper.SuccessResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data: {}
+      message:
+        example: Success
+        type: string
+    type: object
+  user.AddUserForm:
+    description: User registration request form
+    properties:
+      name:
+        example: John Doe
+        type: string
+    required:
+    - name
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@example.com
+    name: API Support
+    url: https://github.com/ranggaaprilio/boilerGo
+  description: This is the API documentation for the BoilerGo application.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: BoilerGo API
+  version: "1.0"
+paths:
+  /v1/users:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user in the system
+      parameters:
+      - description: User Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.AddUserForm'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BadRequestResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.InternalServerErrorResponse'
+      summary: Register a new user
+      tags:
+      - users
+  /v1/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves user information by user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/helper.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/handler.UserResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/helper.BadRequestResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/helper.NotFoundResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/helper.InternalServerErrorResponse'
+      summary: Get a user by ID
+      tags:
+      - users
+schemes:
+- http
+- https
+swagger: "2.0"

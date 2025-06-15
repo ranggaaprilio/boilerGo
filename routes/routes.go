@@ -85,6 +85,9 @@ func Init() *echo.Echo {
 		return c.String(http.StatusOK, versionSTATUS)
 	})
 
+	// Setup Swagger documentation routes
+	SetupSwagger(e)
+
 	/**v1 Group==============================================================**/
 	v1 := e.Group("/api/v1")
 
