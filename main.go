@@ -26,10 +26,26 @@ import (
 func main() {
 	defer exception.Catch()
 
+	// Load configuration
 	conf := c.Loadconf()
+
+	// Print configuration info for debugging
+	println("Server configuration:")
+	println("- Name:", conf.Server.Name)
+	println("- Port:", conf.Server.Port)
+	println("Database configuration:")
+	println("- Host:", conf.Database.DbHost)
+	println("- Port:", conf.Database.DbPort)
+	println("- User:", conf.Database.DbUsername)
+	println("- Database:", conf.Database.DbName)
+
+	// Initialize database connection with retry logic
 	c.DbInit()
-	// bootstrap()
+
+	// Initialize routes
 	e := routes.Init()
 
+	// Start server
+	println("Starting server on port", conf.Server.Port)
 	e.Logger.Fatal(e.Start(":" + conf.Server.Port))
 }

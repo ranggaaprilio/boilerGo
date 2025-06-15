@@ -32,6 +32,15 @@ func Loadconf() Configurations {
 	viper.AutomaticEnv()
 	viper.SetConfigType("yml")
 
+	// Set up mappings for environment variables
+	viper.SetEnvPrefix("")
+	viper.BindEnv("database.dbusername", "DB_USER")
+	viper.BindEnv("database.dbpassword", "DB_PASSWORD")
+	viper.BindEnv("database.dbhost", "DB_HOST")
+	viper.BindEnv("database.dbport", "DB_PORT")
+	viper.BindEnv("database.dbname", "DB_NAME")
+	viper.BindEnv("server.port", "SERVER_PORT")
+
 	var configuration Configurations
 
 	if err := viper.ReadInConfig(); err != nil {

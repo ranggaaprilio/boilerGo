@@ -35,6 +35,7 @@ make swagger
 
 - Go 1.24 or higher
 - MySQL database
+- Docker and Docker Compose (for containerized setup)
 
 ## Installation
 
@@ -80,6 +81,41 @@ go build -o boilerGo
 ```bash
 ./boilerGo
 ```
+
+## Running with Docker
+
+This project includes Docker and Docker Compose configuration for easy setup. This creates a containerized environment with both the API and MySQL database.
+
+### Start the containers
+
+```bash
+# Build and start all services
+make docker-build
+make docker-up
+
+# Or directly with docker-compose
+docker-compose up -d
+```
+
+### Check logs
+
+```bash
+make docker-logs
+```
+
+### Stop the containers
+
+```bash
+make docker-down
+```
+
+The API will be available at `http://localhost:8080`, and Swagger documentation at `http://localhost:8080/swagger/index.html`.
+
+MySQL will be accessible on port 3306 with the following credentials:
+
+- Username: rangga
+- Password: verysecret
+- Database: boilergo
 
 ## Project Structure
 
@@ -194,6 +230,42 @@ This project includes Swagger/OpenAPI documentation. To access the Swagger UI:
    ```bash
    make swagger
    ```
+
+## Troubleshooting
+
+### Database Connection Issues in Docker
+
+If you encounter a database connection error when running in Docker with a message like:
+
+```
+Failed to initialize database, got error dial tcp :0: connect: connection refused
+```
+
+This might be due to one of these issues:
+
+1. **MySQL container isn't ready yet**: Even with the healthcheck in place, sometimes the MySQL container might not be fully ready. Try restarting just the API container:
+
+   ```bash
+   docker-compose restart api
+   ```
+
+2. **Configuration issue**: Make sure your `config.docker.yml` file has these correct settings:
+
+   ```yaml
+   database:
+     dbusername: "rangga"
+     dbpassword: "verysecret"
+     dbhost: "mysql"
+     dbport: "3306"
+     dbname: "boilergo"
+   ```
+
+3. **Network issue**: Ensure both services are on the same Docker network. You can check this with:
+   ```bash
+   docker network inspect boilergo-network
+   ```
+
+The application has been configured to read both from the configuration file and from environment variables, so either approach should work.
 
 ## License
 
