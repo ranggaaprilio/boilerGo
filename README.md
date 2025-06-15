@@ -89,11 +89,16 @@ go build -o boilerGo
 │       ├── handler/    # HTTP handlers
 │       └── modules/    # Business modules
 ├── config/             # Configuration management
+├── docs/               # API documentation
+│   ├── swagger.json    # Generated Swagger JSON definition
+│   ├── swagger.yaml    # Generated Swagger YAML definition
+│   └── swagger_guide.md # Swagger usage guide
 ├── exception/          # Error handling
 ├── helper/             # Helper functions
 ├── middleware/         # HTTP middleware
 ├── public/             # Public assets
 ├── routes/             # Route definitions
+├── scripts/            # Utility scripts
 ├── bootstrap.go        # Application bootstrap
 ├── main.go             # Entry point
 └── config.yml.example  # Example configuration
