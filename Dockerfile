@@ -22,15 +22,11 @@ FROM alpine:3.18
 WORKDIR /app
 
 # Install necessary packages
-RUN apk --no-cache add ca-certificates tzdata mysql-client
+RUN apk --no-cache add ca-certificates tzdata mysql-client make wget go git
 
 # Copy the binary from builder
 COPY --from=builder /app/boilergo .
 COPY --from=builder /app/config.docker.yml /app/config.yml
-COPY --from=builder /app/scripts/wait-for-mysql.sh .
-
-# Make sure the script is executable
-RUN chmod +x /app/wait-for-mysql.sh
 
 # Expose the application port
 EXPOSE 8080

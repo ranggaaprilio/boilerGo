@@ -44,22 +44,27 @@ clean:
 .PHONY: docker-build
 docker-build:
 	@echo "Building Docker images..."
-	docker-compose build
+	docker compose build
 
 .PHONY: docker-up
 docker-up:
 	@echo "Starting Docker containers..."
-	docker-compose up -d
+	docker compose up -d
+
+.PHONY: docker-up-swagger
+docker-up-swagger:
+	@echo "Starting Docker containers with Swagger generation..."
+	./scripts/start-with-swagger.sh
 
 .PHONY: docker-down
 docker-down:
 	@echo "Stopping Docker containers..."
-	docker-compose down
+	docker compose down
 
 .PHONY: docker-logs
 docker-logs:
 	@echo "Showing logs from Docker containers..."
-	docker-compose logs -f
+	docker compose logs -f
 
 # Help command
 .PHONY: help
@@ -73,5 +78,6 @@ help:
 	@echo "  make clean        - Clean build artifacts"
 	@echo "  make docker-build - Build Docker images"
 	@echo "  make docker-up    - Start the containers"
+	@echo "  make docker-up-swagger - Start the containers with Swagger generation"
 	@echo "  make docker-down  - Stop the containers"
 	@echo "  make docker-logs  - View container logs"

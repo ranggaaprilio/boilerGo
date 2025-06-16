@@ -1,0 +1,65 @@
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: boilergo-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: boilergo
+      MYSQL_USER: rangga
+      MYSQL_PASSWORD: verysecret
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "rangga",
+          "-pverysecret",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - boilergo-network
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: boilergo-api
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=rangga
+      - DB_PASSWORD=verysecret
+      - DB_NAME=boilergo
+      - SERVER_PORT=8080
+    ports:
+      - "8080:8080"
+    networks:
+      - boilergo-network
+
+networks:
+  boilergo-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local

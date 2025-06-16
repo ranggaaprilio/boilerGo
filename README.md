@@ -97,6 +97,25 @@ make docker-up
 docker-compose up -d
 ```
 
+### Start the containers and generate Swagger documentation
+
+To start the containers and automatically generate Swagger documentation when the API is up and running:
+
+```bash
+# Build first if needed
+make docker-build
+
+# Start containers and generate Swagger documentation
+make docker-up-swagger
+```
+
+This command will:
+
+1. Start all the Docker containers
+2. Wait for the API to be ready and accessible
+3. Generate the Swagger documentation
+4. Make the Swagger UI available at http://localhost:8080/swagger/index.html
+
 ### Check logs
 
 ```bash
@@ -223,12 +242,15 @@ This project includes Swagger/OpenAPI documentation. To access the Swagger UI:
    ```
 
 3. If you need to regenerate the Swagger documentation after making changes:
+
    ```bash
+   # If running locally
    ./scripts/generate-swagger.sh
-   ```
-   or you can use
-   ```bash
+   # OR
    make swagger
+
+   # If using Docker containers
+   make docker-up-swagger
    ```
 
 ## Troubleshooting
