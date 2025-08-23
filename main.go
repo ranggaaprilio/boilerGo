@@ -17,35 +17,33 @@
 package main
 
 import (
-	c "github.com/ranggaaprilio/boilerGo/config"
+	"log"
+	"os"
+
 	_ "github.com/ranggaaprilio/boilerGo/docs" // Import swagger docs
 	"github.com/ranggaaprilio/boilerGo/exception"
-	"github.com/ranggaaprilio/boilerGo/routes"
+	"github.com/ranggaaprilio/boilerGo/internal/app"
 )
 
 func main() {
 	defer exception.Catch()
 
-	// Load configuration
-	conf := c.Loadconf()
+	// Initialize logger
+	logger := log.New(os.Stdout, "[Main] ", log.LstdFlags)
 
-	// Print configuration info for debugging
-	println("Server configuration:")
-	println("- Name:", conf.Server.Name)
-	println("- Port:", conf.Server.Port)
-	println("Database configuration:")
-	println("- Host:", conf.Database.DbHost)
-	println("- Port:", conf.Database.DbPort)
-	println("- User:", conf.Database.DbUsername)
-	println("- Database:", conf.Database.DbName)
+	// Initialize application
+	application := app.New()
 
-	// Initialize database connection with retry logic
-	c.DbInit()
+	// Run bootstrap process
+	if err := Bootstrap(); err != nil {
+		logger.Fatal("Bootstrap failed:", err)
+	}
 
-	// Initialize routes
-	e := routes.Init()
+	// Log configuration for debugging
+	application.LogConfig()
 
-	// Start server
-	println("Starting server on port", conf.Server.Port)
-	e.Logger.Fatal(e.Start(":" + conf.Server.Port))
+	// Start application server
+	if err := application.Start(); err != nil {
+		logger.Fatal("Failed to start application:", err)
+	}
 }
