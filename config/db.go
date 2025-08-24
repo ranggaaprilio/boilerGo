@@ -2,11 +2,10 @@ package config
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"time"
 
 	"github.com/ranggaaprilio/boilerGo/exception"
+	appLogger "github.com/ranggaaprilio/boilerGo/internal/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -39,11 +38,13 @@ func DbInit() {
 	dbConfig := DefaultDatabaseConfig()
 
 	// Initialize logger for database operations
-	dbLogger := log.New(os.Stdout, "[Database] ", log.LstdFlags)
+	dbLogger := appLogger.SimpleLogger("database")
 
 	// Log connection attempt
-	dbLogger.Printf("Attempting to connect to database at %s:%s as user %s",
-		conf.Database.DbHost, conf.Database.DbPort, conf.Database.DbUsername)
+	dbLogger.Info("Attempting to connect to database",
+		"host", conf.Database.DbHost,
+		"port", conf.Database.DbPort,
+		"user", conf.Database.DbUsername)
 
 	connectionString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		conf.Database.DbUsername,
@@ -52,10 +53,13 @@ func DbInit() {
 		conf.Database.DbPort,
 		conf.Database.DbName)
 
+	// Create a custom logrus writer for GORM
+	logrusWriter := &logrusGormWriter{logger: dbLogger}
+
 	// Configure GORM with custom logger
 	gormConfig := &gorm.Config{
 		Logger: logger.New(
-			dbLogger,
+			logrusWriter,
 			logger.Config{
 				SlowThreshold:             200 * time.Millisecond,
 				LogLevel:                  logger.Warn,
@@ -76,15 +80,18 @@ func DbInit() {
 				sqlDB.SetConnMaxLifetime(time.Hour)
 			}
 
-			dbLogger.Println("Successfully connected to database")
+			dbLogger.Info("Successfully connected to database")
 			return
 		}
 
-		dbLogger.Printf("Failed to connect to database (attempt %d/%d): %v",
-			i+1, dbConfig.MaxRetries, err)
+		dbLogger.Error("Failed to connect to database",
+			"attempt", i+1,
+			"max_retries", dbConfig.MaxRetries,
+			"error", err)
 
 		if i < dbConfig.MaxRetries-1 {
-			dbLogger.Printf("Retrying in %v...", dbConfig.RetryDelay)
+			dbLogger.Info("Retrying database connection",
+				"retry_delay", dbConfig.RetryDelay)
 			time.Sleep(dbConfig.RetryDelay)
 		}
 	}
@@ -129,4 +136,18 @@ func PingDB() error {
 // CreateCon return var db
 func CreateCon() *gorm.DB {
 	return db
+}
+
+// logrusGormWriter implements io.Writer for GORM logger to use logrus
+type logrusGormWriter struct {
+	logger *appLogger.LogrusLogger
+}
+
+func (w *logrusGormWriter) Write(p []byte) (n int, err error) {
+	w.logger.Debug(string(p))
+	return len(p), nil
+}
+
+func (w *logrusGormWriter) Printf(format string, args ...interface{}) {
+	w.logger.Debug(fmt.Sprintf(format, args...))
 }

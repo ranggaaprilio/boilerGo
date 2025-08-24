@@ -1,252 +1,160 @@
 package logger
 
 import (
-	"io"
-	"log/slog"
 	"os"
-	"strings"
-	"time"
 
-	"github.com/ranggaaprilio/boilerGo/config"
+	"github.com/sirupsen/logrus"
 )
 
-// Logger represents the application logger
-type Logger struct {
-	*slog.Logger
+// LogrusLogger wraps logrus.Logger with additional functionality
+type LogrusLogger struct {
+	*logrus.Logger
+	component string
 }
 
-// LogLevel represents different log levels
-type LogLevel string
+// NewLogrusLogger creates a new logrus-based logger
+func NewLogrusLogger(logLevel string, isDevelopment bool, serviceName string) *LogrusLogger {
+	logger := logrus.New()
 
-const (
-	LevelDebug LogLevel = "debug"
-	LevelInfo  LogLevel = "info"
-	LevelWarn  LogLevel = "warn"
-	LevelError LogLevel = "error"
-)
-
-// New creates a new structured logger instance
-func New(conf config.Configurations) *Logger {
-	var level slog.Level
-
-	// Parse log level from configuration
-	switch strings.ToLower(conf.App.LogLevel) {
+	// Set log level
+	switch logLevel {
 	case "debug":
-		level = slog.LevelDebug
+		logger.SetLevel(logrus.DebugLevel)
 	case "info":
-		level = slog.LevelInfo
+		logger.SetLevel(logrus.InfoLevel)
 	case "warn":
-		level = slog.LevelWarn
+		logger.SetLevel(logrus.WarnLevel)
 	case "error":
-		level = slog.LevelError
+		logger.SetLevel(logrus.ErrorLevel)
 	default:
-		level = slog.LevelInfo
+		logger.SetLevel(logrus.InfoLevel)
 	}
 
-	var writer io.Writer = os.Stdout
-
-	// Configure output based on environment
-	if conf.IsProduction() {
-		// In production, you might want to write to a file or external service
-		writer = os.Stdout
-	}
-
-	// Create handler based on environment
-	var handler slog.Handler
-
-	opts := &slog.HandlerOptions{
-		Level:     level,
-		AddSource: conf.IsDevelopment(),
-	}
-
-	if conf.IsDevelopment() {
-		// Use text handler for development (more readable)
-		handler = slog.NewTextHandler(writer, opts)
+	// Set formatter based on environment
+	if isDevelopment {
+		logger.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp: true,
+			ForceColors:   true,
+		})
 	} else {
-		// Use JSON handler for production (structured)
-		handler = slog.NewJSONHandler(writer, opts)
+		logger.SetFormatter(&logrus.JSONFormatter{
+			TimestampFormat: "2006-01-02T15:04:05.000Z",
+		})
 	}
 
-	// Add service information to all logs
-	logger := slog.New(handler).With(
-		"service", conf.App.ServiceName,
-		"environment", conf.Server.Environment,
-		"version", "1.0.0", // This should come from build info
-	)
+	// Set output to stdout
+	logger.SetOutput(os.Stdout)
 
-	return &Logger{Logger: logger}
-}
+	// Add service name to all logs
+	logger = logger.WithField("service", serviceName).Logger
 
-// WithContext returns a logger with additional context
-func (l *Logger) WithContext(ctx ...interface{}) *Logger {
-	if len(ctx)%2 != 0 {
-		l.Error("WithContext called with odd number of arguments", "args", ctx)
-		return l
+	return &LogrusLogger{
+		Logger: logger,
 	}
-
-	return &Logger{Logger: l.Logger.With(ctx...)}
 }
 
 // WithComponent returns a logger with component information
-func (l *Logger) WithComponent(component string) *Logger {
-	return &Logger{Logger: l.Logger.With("component", component)}
+func (l *LogrusLogger) WithComponent(component string) *LogrusLogger {
+	return &LogrusLogger{
+		Logger:    l.Logger.WithField("component", component).Logger,
+		component: component,
+	}
 }
 
-// WithRequestID returns a logger with request ID
-func (l *Logger) WithRequestID(requestID string) *Logger {
-	return &Logger{Logger: l.Logger.With("request_id", requestID)}
+// WithFields returns a logger with additional fields
+func (l *LogrusLogger) WithFields(fields logrus.Fields) *LogrusLogger {
+	return &LogrusLogger{
+		Logger:    l.Logger.WithFields(fields).Logger,
+		component: l.component,
+	}
 }
 
-// WithUserID returns a logger with user ID
-func (l *Logger) WithUserID(userID string) *Logger {
-	return &Logger{Logger: l.Logger.With("user_id", userID)}
+// WithField returns a logger with an additional field
+func (l *LogrusLogger) WithField(key string, value interface{}) *LogrusLogger {
+	return &LogrusLogger{
+		Logger:    l.Logger.WithField(key, value).Logger,
+		component: l.component,
+	}
 }
 
 // WithError returns a logger with error information
-func (l *Logger) WithError(err error) *Logger {
-	return &Logger{Logger: l.Logger.With("error", err.Error())}
-}
-
-// LogRequest logs HTTP request information
-func (l *Logger) LogRequest(method, path, userAgent, ip string, duration time.Duration, statusCode int) {
-	l.Info("HTTP Request",
-		"method", method,
-		"path", path,
-		"status_code", statusCode,
-		"duration_ms", duration.Milliseconds(),
-		"user_agent", userAgent,
-		"client_ip", ip,
-	)
-}
-
-// LogDatabaseQuery logs database query information
-func (l *Logger) LogDatabaseQuery(query string, duration time.Duration, err error) {
-	if err != nil {
-		l.Error("Database Query Failed",
-			"query", query,
-			"duration_ms", duration.Milliseconds(),
-			"error", err.Error(),
-		)
-	} else {
-		l.Debug("Database Query",
-			"query", query,
-			"duration_ms", duration.Milliseconds(),
-		)
+func (l *LogrusLogger) WithError(err error) *LogrusLogger {
+	return &LogrusLogger{
+		Logger:    l.Logger.WithError(err).Logger,
+		component: l.component,
 	}
 }
 
-// LogStartup logs application startup information
-func (l *Logger) LogStartup(port string, config interface{}) {
-	l.Info("Application Starting",
-		"port", port,
-		"config", config,
-	)
+// Fatal logs a fatal message and exits
+func (l *LogrusLogger) Fatal(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		l.WithFields(argsToFields(args...)).Fatal(msg)
+	} else {
+		l.Logger.Fatal(msg)
+	}
 }
 
-// LogShutdown logs application shutdown information
-func (l *Logger) LogShutdown(reason string) {
-	l.Info("Application Shutting Down",
-		"reason", reason,
-		"timestamp", time.Now(),
-	)
+// Error logs an error message
+func (l *LogrusLogger) Error(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		l.WithFields(argsToFields(args...)).Error(msg)
+	} else {
+		l.Logger.Error(msg)
+	}
 }
 
-// Fatal logs a fatal message and exits the application
-func (l *Logger) Fatal(msg string, args ...interface{}) {
-	l.Error(msg, args...)
-	os.Exit(1)
+// Warn logs a warning message
+func (l *LogrusLogger) Warn(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		l.WithFields(argsToFields(args...)).Warn(msg)
+	} else {
+		l.Logger.Warn(msg)
+	}
 }
 
-// Middleware creates an Echo middleware for request logging
-func (l *Logger) Middleware() func(next func(c interface{}) error) func(c interface{}) error {
-	return func(next func(c interface{}) error) func(c interface{}) error {
-		return func(c interface{}) error {
-			start := time.Now()
+// Info logs an info message
+func (l *LogrusLogger) Info(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		l.WithFields(argsToFields(args...)).Info(msg)
+	} else {
+		l.Logger.Info(msg)
+	}
+}
 
-			if err := next(c); err != nil {
-				// Handle Echo context here if needed
-				// This is a simplified version
-				l.WithError(err).Error("Request failed")
-				return err
-			}
+// Debug logs a debug message
+func (l *LogrusLogger) Debug(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		l.WithFields(argsToFields(args...)).Debug(msg)
+	} else {
+		l.Logger.Debug(msg)
+	}
+}
 
-			duration := time.Since(start)
-			l.Debug("Request completed", "duration_ms", duration.Milliseconds())
-
-			return nil
+// argsToFields converts key-value pairs to logrus.Fields
+func argsToFields(args ...interface{}) logrus.Fields {
+	fields := make(logrus.Fields)
+	for i := 0; i < len(args)-1; i += 2 {
+		key, ok := args[i].(string)
+		if !ok {
+			continue
 		}
+		fields[key] = args[i+1]
 	}
+	return fields
 }
 
-// Health logs health check information
-func (l *Logger) LogHealthCheck(component string, status string, duration time.Duration, message string) {
-	l.Info("Health Check",
-		"component", component,
-		"status", status,
-		"duration_ms", duration.Milliseconds(),
-		"message", message,
-	)
-}
+// SimpleLogger creates a basic logrus logger without config dependency
+func SimpleLogger(component string) *LogrusLogger {
+	logger := logrus.New()
+	logger.SetLevel(logrus.InfoLevel)
+	logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+		ForceColors:   true,
+	})
+	logger.SetOutput(os.Stdout)
 
-// LogConfigLoad logs configuration loading
-func (l *Logger) LogConfigLoad(source string, success bool) {
-	if success {
-		l.Info("Configuration loaded successfully", "source", source)
-	} else {
-		l.Error("Failed to load configuration", "source", source)
+	return &LogrusLogger{
+		Logger:    logger.WithField("component", component).Logger,
+		component: component,
 	}
-}
-
-// LogDatabaseConnection logs database connection events
-func (l *Logger) LogDatabaseConnection(event string, details map[string]interface{}) {
-	args := []interface{}{"event", event}
-	for k, v := range details {
-		args = append(args, k, v)
-	}
-	l.Info("Database Connection", args...)
-}
-
-// Performance logs performance metrics
-func (l *Logger) LogPerformance(operation string, duration time.Duration, additionalFields ...interface{}) {
-	args := []interface{}{
-		"operation", operation,
-		"duration_ms", duration.Milliseconds(),
-	}
-	args = append(args, additionalFields...)
-
-	if duration > 1*time.Second {
-		l.Warn("Slow Operation Detected", args...)
-	} else {
-		l.Debug("Performance Metric", args...)
-	}
-}
-
-// Security logs security-related events
-func (l *Logger) LogSecurity(event string, userID string, ip string, details map[string]interface{}) {
-	args := []interface{}{
-		"security_event", event,
-		"user_id", userID,
-		"client_ip", ip,
-	}
-
-	for k, v := range details {
-		args = append(args, k, v)
-	}
-
-	l.Warn("Security Event", args...)
-}
-
-// Business logs business logic events
-func (l *Logger) LogBusiness(event string, entity string, entityID string, details map[string]interface{}) {
-	args := []interface{}{
-		"business_event", event,
-		"entity", entity,
-		"entity_id", entityID,
-	}
-
-	for k, v := range details {
-		args = append(args, k, v)
-	}
-
-	l.Info("Business Event", args...)
 }

@@ -2,11 +2,10 @@ package config
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 
 	"github.com/ranggaaprilio/boilerGo/exception"
+	appLogger "github.com/ranggaaprilio/boilerGo/internal/logger"
 	"github.com/spf13/viper"
 )
 
@@ -46,13 +45,13 @@ type AppConfigurations struct {
 
 // ConfigLoader handles configuration loading and validation
 type ConfigLoader struct {
-	logger *log.Logger
+	logger *appLogger.LogrusLogger
 }
 
 // NewConfigLoader creates a new configuration loader
 func NewConfigLoader() *ConfigLoader {
 	return &ConfigLoader{
-		logger: log.New(os.Stdout, "[Config] ", log.LstdFlags),
+		logger: appLogger.SimpleLogger("config"),
 	}
 }
 
@@ -64,7 +63,7 @@ func Loadconf() Configurations {
 
 // Load loads the configuration from file and environment variables
 func (cl *ConfigLoader) Load() Configurations {
-	cl.logger.Println("Loading application configuration...")
+	cl.logger.Info("Loading application configuration...")
 
 	// Initialize viper
 	cl.setupViper()
@@ -80,28 +79,28 @@ func (cl *ConfigLoader) Load() Configurations {
 	// Try to read config file
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			cl.logger.Println("Config file not found, using environment variables and defaults")
+			cl.logger.Info("Config file not found, using environment variables and defaults")
 		} else {
-			cl.logger.Printf("Error reading config file: %v", err)
+			cl.logger.Error("Error reading config file", "error", err)
 			exception.PanicIfNeeded(err)
 		}
 	} else {
-		cl.logger.Printf("Using config file: %s", viper.ConfigFileUsed())
+		cl.logger.Info("Using config file", "file", viper.ConfigFileUsed())
 	}
 
 	// Unmarshal configuration
 	if err := viper.Unmarshal(&configuration); err != nil {
-		cl.logger.Printf("Error unmarshaling configuration: %v", err)
+		cl.logger.Error("Error unmarshaling configuration", "error", err)
 		exception.PanicIfNeeded(err)
 	}
 
 	// Validate configuration
 	if err := cl.validateConfiguration(&configuration); err != nil {
-		cl.logger.Printf("Configuration validation failed: %v", err)
+		cl.logger.Error("Configuration validation failed", "error", err)
 		exception.PanicIfNeeded(err)
 	}
 
-	cl.logger.Println("Configuration loaded and validated successfully")
+	cl.logger.Info("Configuration loaded and validated successfully")
 	return configuration
 }
 
@@ -135,7 +134,7 @@ func (cl *ConfigLoader) setupEnvironmentBindings() {
 
 	for configKey, envVar := range envMappings {
 		if err := viper.BindEnv(configKey, envVar); err != nil {
-			cl.logger.Printf("Warning: Failed to bind environment variable %s: %v", envVar, err)
+			cl.logger.Warn("Failed to bind environment variable", "env_var", envVar, "error", err)
 		}
 	}
 }

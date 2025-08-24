@@ -17,26 +17,24 @@
 package main
 
 import (
-	"log"
-	"os"
-
 	_ "github.com/ranggaaprilio/boilerGo/docs" // Import swagger docs
 	"github.com/ranggaaprilio/boilerGo/exception"
 	"github.com/ranggaaprilio/boilerGo/internal/app"
+	appLogger "github.com/ranggaaprilio/boilerGo/internal/logger"
 )
 
 func main() {
 	defer exception.Catch()
 
-	// Initialize logger
-	logger := log.New(os.Stdout, "[Main] ", log.LstdFlags)
+	// Initialize simple logger for main
+	mainLogger := appLogger.SimpleLogger("main")
 
 	// Initialize application
 	application := app.New()
 
 	// Run bootstrap process
 	if err := Bootstrap(); err != nil {
-		logger.Fatal("Bootstrap failed:", err)
+		mainLogger.Fatal("Bootstrap failed", "error", err)
 	}
 
 	// Log configuration for debugging
@@ -44,6 +42,6 @@ func main() {
 
 	// Start application server
 	if err := application.Start(); err != nil {
-		logger.Fatal("Failed to start application:", err)
+		mainLogger.Fatal("Failed to start application", "error", err)
 	}
 }

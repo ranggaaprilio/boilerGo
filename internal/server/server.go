@@ -18,7 +18,7 @@ import (
 type Server struct {
 	echo   *echo.Echo
 	config config.Configurations
-	logger *logger.Logger
+	logger *logger.SlogLogger
 }
 
 // CustomValidator wraps the validator
@@ -35,7 +35,7 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 }
 
 // New creates a new server instance
-func New(conf config.Configurations, appLogger *logger.Logger) *echo.Echo {
+func New(conf config.Configurations) *echo.Echo {
 	e := echo.New()
 
 	// Setup custom validator
@@ -46,7 +46,7 @@ func New(conf config.Configurations, appLogger *logger.Logger) *echo.Echo {
 	healthService.RegisterDefaultCheckers()
 
 	// Setup middlewares
-	setupMiddlewares(e, appLogger, healthService)
+	setupMiddlewares(e, healthService)
 
 	// Setup routes
 	routes.SetupRoutes(e)
@@ -55,7 +55,7 @@ func New(conf config.Configurations, appLogger *logger.Logger) *echo.Echo {
 }
 
 // setupMiddlewares configures all middlewares
-func setupMiddlewares(e *echo.Echo, appLogger *logger.Logger, healthService *health.HealthService) {
+func setupMiddlewares(e *echo.Echo, healthService *health.HealthService) {
 	// Custom server header
 	e.Use(middlewares.ServerHeader())
 

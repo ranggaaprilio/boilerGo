@@ -1,53 +1,53 @@
 package main
 
 import (
-	"log"
-
 	"github.com/ranggaaprilio/boilerGo/app/v1/modules/user"
 	"github.com/ranggaaprilio/boilerGo/config"
+	appLogger "github.com/ranggaaprilio/boilerGo/internal/logger"
 )
 
 // Bootstrap initializes the application's database and performs necessary migrations
 func Bootstrap() error {
-	logger := log.New(log.Writer(), "[Bootstrap] ", log.LstdFlags)
+	// Initialize simple logger for bootstrap
+	bootstrapLogger := appLogger.SimpleLogger("bootstrap")
 
-	logger.Println("Starting bootstrap process...")
+	bootstrapLogger.Info("Starting bootstrap process...")
 
 	// Get database connection
 	db := config.CreateCon()
 	if db == nil {
-		logger.Fatal("Failed to get database connection")
+		bootstrapLogger.Fatal("Failed to get database connection")
 		return nil
 	}
 
-	logger.Println("Running database migrations...")
+	bootstrapLogger.Info("Running database migrations...")
 
 	// Run migrations for all models
 	if err := db.AutoMigrate(&user.User{}); err != nil {
-		logger.Printf("Failed to migrate User model: %v", err)
+		bootstrapLogger.Error("Failed to migrate User model", "error", err)
 		return err
 	}
 
-	logger.Println("Database migrations completed successfully")
+	bootstrapLogger.Info("Database migrations completed successfully")
 
 	// Add any seed data or additional bootstrap logic here
-	if err := seedData(db, logger); err != nil {
-		logger.Printf("Failed to seed data: %v", err)
+	if err := seedData(db, bootstrapLogger); err != nil {
+		bootstrapLogger.Error("Failed to seed data", "error", err)
 		return err
 	}
 
-	logger.Println("Bootstrap process completed successfully")
+	bootstrapLogger.Info("Bootstrap process completed successfully")
 	return nil
 }
 
 // seedData adds initial data to the database if needed
-func seedData(db interface{}, logger *log.Logger) error {
+func seedData(db interface{}, logger *appLogger.LogrusLogger) error {
 	// Add any initial data seeding logic here
-	logger.Println("Checking for seed data requirements...")
+	logger.Info("Checking for seed data requirements...")
 
 	// Example: Create default admin user, default settings, etc.
 	// This is where you'd add any initial data your application needs
 
-	logger.Println("Seed data check completed")
+	logger.Info("Seed data check completed")
 	return nil
 }

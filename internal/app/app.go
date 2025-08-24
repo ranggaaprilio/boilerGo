@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,7 +19,7 @@ import (
 type App struct {
 	server *echo.Echo
 	config config.Configurations
-	logger *logger.Logger
+	logger *logger.LogrusLogger
 }
 
 // New creates a new application instance
@@ -27,16 +28,13 @@ func New() *App {
 	conf := config.Loadconf()
 
 	// Initialize structured logger
-	appLogger := logger.New(conf)
-
-	// Log configuration load
-	appLogger.LogConfigLoad("config.yml", true)
+	appLogger := logger.SimpleLogger("app")
 
 	// Initialize database
 	config.DbInit()
 
 	// Initialize server
-	srv := server.New(conf, appLogger)
+	srv := server.New(conf)
 
 	return &App{
 		server: srv,
@@ -48,7 +46,7 @@ func New() *App {
 // Start starts the application server
 func (a *App) Start() error {
 	// Log startup information
-	a.logger.LogStartup(a.config.Server.Port, a.config)
+	a.logger.Info("Starting application")
 
 	// Start server in a goroutine
 	go func() {
@@ -68,7 +66,7 @@ func (a *App) Start() error {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	a.logger.LogShutdown("signal received")
+	a.logger.Info("Shutdown signal received")
 
 	// Give outstanding requests a deadline for completion
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -91,15 +89,13 @@ func (a *App) GetServer() *echo.Echo {
 
 // LogConfig logs the current configuration for debugging
 func (a *App) LogConfig() {
-	a.logger.Info("Application Configuration",
-		"server_name", a.config.Server.Name,
-		"server_port", a.config.Server.Port,
-		"server_environment", a.config.Server.Environment,
-		"db_host", a.config.Database.DbHost,
-		"db_port", a.config.Database.DbPort,
-		"db_user", a.config.Database.DbUsername,
-		"db_name", a.config.Database.DbName,
-		"log_level", a.config.App.LogLevel,
-		"debug_mode", a.config.App.Debug,
-	)
+	a.logger.Info(fmt.Sprintf(
+		"Configuration:\n"+
+			"  Service: %s\n"+
+			"  Port: %s\n"+
+			"  Env: %s\n",
+		a.config.Server.Name,
+		a.config.Server.Port,
+		a.config.Server.Environment,
+	))
 }
