@@ -19,7 +19,7 @@ package main
 import (
 	_ "github.com/ranggaaprilio/boilerGo/docs" // Import swagger docs
 	"github.com/ranggaaprilio/boilerGo/exception"
-	"github.com/ranggaaprilio/boilerGo/internal/app"
+	cmd "github.com/ranggaaprilio/boilerGo/internal/cmd"
 	appLogger "github.com/ranggaaprilio/boilerGo/internal/logger"
 )
 
@@ -30,7 +30,7 @@ func main() {
 	mainLogger := appLogger.SimpleLogger("main")
 
 	// Initialize application
-	application := app.New()
+	application := cmd.New()
 
 	// Run bootstrap process
 	if err := Bootstrap(); err != nil {
