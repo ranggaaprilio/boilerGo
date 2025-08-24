@@ -51,10 +51,7 @@ func (a *App) Start() error {
 	// Start server in a goroutine
 	go func() {
 		address := ":" + a.config.Server.Port
-		a.logger.Info("Starting server",
-			"service", a.config.Server.Name,
-			"port", a.config.Server.Port,
-			"address", address)
+		a.logger.Info("Server is up and running")
 
 		if err := a.server.Start(address); err != nil && err != http.ErrServerClosed {
 			a.logger.Fatal("Failed to start server", "error", err)
