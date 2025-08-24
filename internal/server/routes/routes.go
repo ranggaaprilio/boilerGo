@@ -9,6 +9,7 @@ import (
 	"github.com/ranggaaprilio/boilerGo/app/v1/modules/user"
 	"github.com/ranggaaprilio/boilerGo/config"
 	"github.com/ranggaaprilio/boilerGo/exception"
+	"github.com/ranggaaprilio/boilerGo/internal/server/routes/v1"
 )
 
 // SetupRoutes configures all application routes
@@ -29,7 +30,7 @@ func setupV1Routes(e *echo.Echo) {
 	v1 := e.Group("/api/v1")
 
 	// Setup welcome routes
-	SetupWelcomeRoutes(v1)
+	routes.SetupWelcomeRoutes(v1)
 
 	// Setup user routes
 	setupUserRoutes(v1)
@@ -44,7 +45,7 @@ func setupUserRoutes(v1 *echo.Group) {
 	userHandler := handler.NewUserHandler(userService)
 
 	// Setup user routes
-	SetupUserRoutes(v1, userHandler)
+	routes.SetupUserRoutes(v1, userHandler)
 }
 
 // exportRoutes saves all routes to a JSON file for documentation
